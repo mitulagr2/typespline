@@ -8,7 +8,8 @@ interface CanvasProps {
 
 const Canvas = ({ canvasRef }: CanvasProps) => {
   return (
-    <div className="flex-grow h-full flex items-center justify-center bg-gray-700">
+    <div className="flex-grow h-full flex items-center justify-center bg-gray-700 relative">
+      {/* We add the canvas element and its container for snapping lines */}
       <canvas ref={canvasRef} />
     </div>
   );

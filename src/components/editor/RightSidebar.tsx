@@ -77,6 +77,7 @@ const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
 
       {/* --- Main Properties --- */}
       <div className="border-b border-gray-600 pb-4 space-y-4">
+
         {/* Font Family */}
         <div>
           <label className="text-sm text-gray-400 mb-1 block">Font Family</label>
@@ -136,6 +137,23 @@ const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
             />
           </div>
         </div>
+      
+        <Slider
+          label="Line Height"
+          min={0.5}
+          max={3}
+          step={0.1}
+          value={textbox.lineHeight || 1.16}
+          onChange={(e) => onUpdate({ lineHeight: parseFloat(e.target.value) })}
+        />
+        <Slider
+          label="Letter Spacing"
+          min={-200}
+          max={800}
+          step={10}
+          value={textbox.charSpacing || 0}
+          onChange={(e) => onUpdate({ charSpacing: parseInt(e.target.value, 10) })}
+        />
       </div>
 
       {/* --- Shadow Properties --- */}
