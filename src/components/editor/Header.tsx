@@ -5,15 +5,27 @@ import Button from "../ui/Button";
 interface HeaderProps {
   onUploadClick: () => void;
   onAddText: () => void;
+  onExport: () => void;
+  onReset: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
-const Header = ({ onUploadClick, onAddText }: HeaderProps) => {
+const Header = ({ onUploadClick, onAddText, onExport, onReset, onUndo, onRedo, canUndo, canRedo }: HeaderProps) => {
   return (
     <header className="p-3 bg-gray-800 text-white flex justify-between items-center shadow-md z-10">
       <h1 className="text-xl font-bold">Image Text Composer</h1>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
+        <Button onClick={onUndo} disabled={!canUndo}>Undo</Button>
+        <Button onClick={onRedo} disabled={!canRedo}>Redo</Button>
+        <div className="w-px h-8 bg-gray-600 mx-2" />
         <Button onClick={onUploadClick}>Upload Image</Button>
         <Button onClick={onAddText}>Add Text</Button>
+        <div className="w-px h-8 bg-gray-600 mx-2" />
+        <Button onClick={onReset} className="bg-red-600 hover:bg-red-700">Reset</Button>
+        <Button onClick={onExport} className="bg-green-600 hover:bg-green-700">Export</Button>
       </div>
     </header>
   );

@@ -1,25 +1,50 @@
 "use client";
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import * as fabric from 'fabric';
 import Canvas from "@/components/editor/Canvas";
 import Header from "@/components/editor/Header";
 import LeftSidebar from "@/components/editor/LeftSidebar";
 import RightSidebar from "@/components/editor/RightSidebar";
 import { useFabric } from '@/hooks/useFabric';
+import { useHistory } from '@/hooks/useHistory';
 
 export default function Page() {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
+  const [layers, setLayers] = useState<fabric.Object[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const originalImageDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+  const originalImage = useRef<{ element: HTMLImageElement; scale: number } | null>(null);
+
+  const { undo, redo, saveState, canUndo, canRedo, setHistory } = useHistory(canvas);
+
+  const updateLayers = useCallback(() => {
+    if (canvas) {
+      setLayers(canvas.getObjects());
+    }
+  }, [canvas]);
 
   const canvasRef = useFabric((fabricCanvas) => {
     setCanvas(fabricCanvas);
-    
+
     fabricCanvas.on('selection:created', (e) => setActiveObject(e.selected[0]));
     fabricCanvas.on('selection:updated', (e) => setActiveObject(e.selected[0]));
     fabricCanvas.on('selection:cleared', () => setActiveObject(null));
+
+    fabricCanvas.on('after:render', updateLayers);
+
+    // Load from localStorage on init
+    const savedState = localStorage.getItem('canvasState');
+    if (savedState) {
+        fabricCanvas.loadFromJSON(savedState, () => {
+            fabricCanvas.renderAll();
+            setHistory([savedState]);
+        });
+    } else {
+        // Initialize history with empty state
+        setHistory([JSON.stringify(fabricCanvas.toJSON())]);
+    }
   });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,26 +56,23 @@ export default function Page() {
       const imgObj = new Image();
       imgObj.src = event.target?.result as string;
       imgObj.onload = () => {
-        originalImageDimensions.current = { width: imgObj.width, height: imgObj.height };
-
-        const image = new fabric.Image(imgObj);
         const workspace = canvas.getElement().parentElement;
         if (!workspace) return;
         
-        const containerWidth = workspace.clientWidth - 40; // With padding
+        const containerWidth = workspace.clientWidth - 40;
         const containerHeight = workspace.clientHeight - 40;
-
         const scale = Math.min(containerWidth / imgObj.width, containerHeight / imgObj.height);
         
+        originalImage.current = { element: imgObj, scale };
+
         canvas.setDimensions({ width: imgObj.width * scale, height: imgObj.height * scale });
-        canvas.setBackgroundImage(image, canvas.renderAll.bind(canvas), {
-          scaleX: scale,
-          scaleY: scale,
-        });
+        const image = new fabric.Image(imgObj, { selectable: false, evented: false });
+        canvas.setBackgroundImage(image, canvas.renderAll.bind(canvas), { scaleX: scale, scaleY: scale });
+        saveState();
       };
     };
     reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input to allow re-uploading the same file
+    e.target.value = '';
   };
 
   const handleAddText = useCallback(() => {
@@ -61,40 +83,142 @@ export default function Page() {
       width: 200,
       fontSize: 24,
       fill: '#ffffff',
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      padding: 7,
     });
     canvas.add(text);
     canvas.setActiveObject(text);
-    canvas.renderAll();
   }, [canvas]);
+  
+  const updateActiveObject = (props: Partial<fabric.ITextOptions | { shadow: fabric.Shadow | null }>) => {
+    if (activeObject && canvas) {
+      if ('shadow' in props) {
+        activeObject.set({ shadow: props.shadow });
+      } else {
+        activeObject.set(props);
+      }
+      canvas.renderAll();
+      saveState();
+    }
+  };
 
-  const triggerFileUpload = () => {
-    fileInputRef.current?.click();
+  const handleLayerLock = (obj: fabric.Object) => {
+    obj.set({
+        selectable: !obj.selectable,
+        evented: !obj.evented,
+    });
+    canvas?.renderAll();
+    // No need to save state for a lock, as it's a UI-only feature
+  };
+
+  const handleLayerDuplicate = (obj: fabric.Object) => {
+    if (!canvas) return;
+    obj.clone((cloned: fabric.Object) => {
+        cloned.set({
+            left: obj.left + 10,
+            top: obj.top + 10,
+        });
+        canvas.add(cloned);
+        canvas.setActiveObject(cloned);
+    });
+  };
+
+  const handleLayerMove = (direction: 'front' | 'back' | 'forward' | 'backward') => {
+    if (!activeObject || !canvas) return;
+    switch (direction) {
+      case 'front': activeObject.bringToFront(); break;
+      case 'back': activeObject.sendToBack(); break;
+      case 'forward': activeObject.bringForward(); break;
+      case 'backward': activeObject.sendBackwards(); break;
+    }
+    canvas.renderAll();
+    saveState();
   };
   
-  const updateActiveObject = (props: Partial<fabric.ITextOptions>) => {
-    if (activeObject && canvas) {
-      activeObject.set(props);
-      canvas.renderAll();
+  const handleExport = () => {
+    if (!canvas || !originalImage.current) {
+        alert("Please upload an image first.");
+        return;
+    }
+
+    const { element, scale } = originalImage.current;
+    const originalWidth = element.width;
+    const originalHeight = element.height;
+
+    // Create a temporary static canvas for high-res export
+    const staticCanvas = new fabric.StaticCanvas(null, {
+        width: originalWidth,
+        height: originalHeight,
+    });
+
+    const bgImage = new fabric.Image(element, { selectable: false, evented: false });
+    staticCanvas.setBackgroundImage(bgImage, staticCanvas.renderAll.bind(staticCanvas), {});
+
+    canvas.getObjects().forEach(obj => {
+        const clonedObj = fabric.util.object.clone(obj);
+        clonedObj.set({
+            left: obj.left / scale,
+            top: obj.top / scale,
+            scaleX: (obj.scaleX || 1) / scale,
+            scaleY: (obj.scaleY || 1) / scale,
+        });
+        if (clonedObj.type === 'textbox') {
+            (clonedObj as fabric.Textbox).set({
+                width: (obj.width || 0) / scale,
+                fontSize: (obj.fontSize || 24) / scale,
+            });
+        }
+        staticCanvas.add(clonedObj);
+    });
+
+    staticCanvas.renderAll();
+
+    const dataUrl = staticCanvas.toDataURL({ format: 'png' });
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = 'composed-image.png';
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to reset the canvas? All unsaved work will be lost.")) {
+      if (canvas) {
+        canvas.clear();
+        canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
+        canvas.setDimensions({ width: 500, height: 500 });
+        localStorage.removeItem('canvasState');
+        setHistory([JSON.stringify(canvas.toJSON())]);
+      }
     }
   };
 
   return (
     <main className="flex flex-col h-screen bg-gray-900 text-white">
       <Header 
-        onUploadClick={triggerFileUpload}
+        onUploadClick={() => fileInputRef.current?.click()}
         onAddText={handleAddText}
+        onExport={handleExport}
+        onReset={handleReset}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleImageUpload} 
-        className="hidden"
-        accept="image/png" 
-      />
+      <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/png" />
       <div className="flex flex-1 overflow-hidden">
-        <LeftSidebar />
-        <section className="flex-1 flex items-center justify-center p-4 overflow-auto bg-gray-800">
+        <LeftSidebar 
+            layers={layers}
+            activeObject={activeObject}
+            onLayerSelect={(obj) => canvas?.setActiveObject(obj).renderAll()}
+            onLayerMove={handleLayerMove}
+            onLayerLock={handleLayerLock}
+            onLayerDuplicate={handleLayerDuplicate}
+        />
+        <section className="flex-1 flex items-center justify-center p-4 overflow-auto bg-gray-700">
           <Canvas canvasRef={canvasRef} />
         </section>
         <RightSidebar 
