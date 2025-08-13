@@ -1,103 +1,107 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useRef, useCallback } from 'react';
+import * as fabric from 'fabric';
+import Canvas from "@/components/editor/Canvas";
+import Header from "@/components/editor/Header";
+import LeftSidebar from "@/components/editor/LeftSidebar";
+import RightSidebar from "@/components/editor/RightSidebar";
+import { useFabric } from '@/hooks/useFabric';
+
+export default function Page() {
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const originalImageDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  const canvasRef = useFabric((fabricCanvas) => {
+    setCanvas(fabricCanvas);
+    
+    fabricCanvas.on('selection:created', (e) => setActiveObject(e.selected[0]));
+    fabricCanvas.on('selection:updated', (e) => setActiveObject(e.selected[0]));
+    fabricCanvas.on('selection:cleared', () => setActiveObject(null));
+  });
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !canvas) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imgObj = new Image();
+      imgObj.src = event.target?.result as string;
+      imgObj.onload = () => {
+        originalImageDimensions.current = { width: imgObj.width, height: imgObj.height };
+
+        const image = new fabric.Image(imgObj);
+        const workspace = canvas.getElement().parentElement;
+        if (!workspace) return;
+        
+        const containerWidth = workspace.clientWidth - 40; // With padding
+        const containerHeight = workspace.clientHeight - 40;
+
+        const scale = Math.min(containerWidth / imgObj.width, containerHeight / imgObj.height);
+        
+        canvas.setDimensions({ width: imgObj.width * scale, height: imgObj.height * scale });
+        canvas.setBackgroundImage(image, canvas.renderAll.bind(canvas), {
+          scaleX: scale,
+          scaleY: scale,
+        });
+      };
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input to allow re-uploading the same file
+  };
+
+  const handleAddText = useCallback(() => {
+    if (!canvas) return;
+    const text = new fabric.Textbox('Type here', {
+      left: 50,
+      top: 50,
+      width: 200,
+      fontSize: 24,
+      fill: '#ffffff',
+      fontFamily: 'Arial'
+    });
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const updateActiveObject = (props: Partial<fabric.ITextOptions>) => {
+    if (activeObject && canvas) {
+      activeObject.set(props);
+      canvas.renderAll();
+    }
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <main className="flex flex-col h-screen bg-gray-900 text-white">
+      <Header 
+        onUploadClick={triggerFileUpload}
+        onAddText={handleAddText}
+      />
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleImageUpload} 
+        className="hidden"
+        accept="image/png" 
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <LeftSidebar />
+        <section className="flex-1 flex items-center justify-center p-4 overflow-auto bg-gray-800">
+          <Canvas canvasRef={canvasRef} />
+        </section>
+        <RightSidebar 
+          activeObject={activeObject}
+          onUpdate={updateActiveObject}
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    </main>
   );
 }
