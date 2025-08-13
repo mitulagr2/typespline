@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import * as fabric from 'fabric';
+import { fabric } from 'fabric';
 import Button from '../ui/Button';
 
 // A simple lock icon component
@@ -33,7 +33,16 @@ const LeftSidebar = ({ layers, activeObject, onLayerSelect, onLayerMove, onLayer
         {[...layers].reverse().map((layer, index) => { // Reverse to show top layer first
           const isActive = layer === activeObject;
           const isLocked = !layer.selectable;
-          const layerName = layer.type === 'textbox' ? (layer as fabric.Textbox).text.substring(0, 20) : `Layer ${index}`;
+
+          // const layerName = layer.type === 'textbox' ? (layer as fabric.Textbox).text.substring(0, 20) : `Layer ${index}`;
+          let layerName = `Layer ${layers.length - index}`;
+          if (layer.type === 'textbox') {
+            const textContent = (layer as fabric.Textbox).text;
+            layerName = textContent ? textContent.substring(0, 20) : '[Empty Text]';
+          } else if (layer.type === 'group') {
+            const group = layer as fabric.Group;
+            layerName = `Group (${group.size()})`;
+          }
           
           return (
             <div key={`${layer.type}-${index}`} className={`p-2 rounded-md flex items-center justify-between transition-colors ${ isActive ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600' }`} >

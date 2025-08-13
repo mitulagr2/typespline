@@ -3,7 +3,7 @@
 import React from 'react';
 
 interface CanvasProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
 }
 
 const Canvas = ({ canvasRef }: CanvasProps) => {

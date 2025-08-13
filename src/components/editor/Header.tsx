@@ -1,7 +1,7 @@
 "use client";
 
 import Button from "../ui/Button";
-import * as fabric from "fabric";
+import { fabric } from "fabric";
 
 interface HeaderProps {
   activeObject: fabric.Object | null;

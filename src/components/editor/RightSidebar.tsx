@@ -1,6 +1,6 @@
 "use client";
 
-import * as fabric from 'fabric';
+import { fabric } from 'fabric';
 import React, { useEffect, useState } from 'react';
 import { loadGoogleFont } from '@/lib/font-loader';
 import Input from '../ui/Input';
@@ -8,7 +8,7 @@ import Slider from '../ui/Slider';
 
 interface RightSidebarProps {
   activeObject: fabric.Object | null;
-  onUpdate: (props: Partial<fabric.ITextOptions | { shadow: fabric.Shadow | null }>) => void;
+  onUpdate: (props: Partial<fabric.ITextOptions | { shadow: fabric.Shadow | undefined }>) => void;
 }
 
 const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
@@ -52,9 +52,10 @@ const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
     });
 
     if (prop === 'enabled') {
-      onUpdate({ shadow: value ? currentShadow : null });
+      onUpdate({ shadow: value ? currentShadow : undefined });
     } else {
-      currentShadow.set({ [prop]: value });
+      // currentShadow.set({ [prop]: value });
+      (currentShadow as any)[prop] = value;
       onUpdate({ shadow: currentShadow });
     }
   };

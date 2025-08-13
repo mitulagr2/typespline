@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import * as fabric from 'fabric';
+import { useState, useMemo, useEffect } from 'react';
+import { fabric } from 'fabric';
 import { debounce } from '@/lib/utils';
 
 const MAX_HISTORY_LENGTH = 20;
@@ -9,7 +9,7 @@ export const useHistory = (canvas: fabric.Canvas | null) => {
   const [redoStack, setRedoStack] = useState<string[]>([]);
   const [isStateLoading, setIsStateLoading] = useState(false);
 
-  const saveState = useCallback(() => {
+  const saveState = () => {
     if (!canvas || isStateLoading) return;
     
     const jsonState = JSON.stringify(canvas.toJSON());
@@ -26,7 +26,7 @@ export const useHistory = (canvas: fabric.Canvas | null) => {
     });
     setRedoStack([]); // Clear redo stack on new action
     localStorage.setItem('canvasState', jsonState);
-  }, [canvas, isStateLoading, history]);
+  };
 
   const debouncedSaveState = useMemo(() => debounce(saveState, 300), [saveState]);
 
@@ -44,14 +44,14 @@ export const useHistory = (canvas: fabric.Canvas | null) => {
     };
   }, [canvas, debouncedSaveState]);
 
-  const loadState = useCallback((state: string) => {
+  const loadState = (state: string) => {
     if (!canvas) return;
     setIsStateLoading(true);
     canvas.loadFromJSON(state, () => {
       canvas.renderAll();
       setIsStateLoading(false);
     });
-  }, [canvas]);
+  };
 
   const undo = () => {
     if (history.length <= 1 || !canvas) return; // Can't undo the initial state

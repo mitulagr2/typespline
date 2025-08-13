@@ -1,5 +1,11 @@
-// A simple debounce function
-export const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
+/**
+ * A simple debounce function that takes a function and a delay,
+ * and returns a new debounced function.
+ */
+export const debounce = <F extends (...args: any[]) => any>(
+  func: F,
+  waitFor: number
+) => {
   let timeout: NodeJS.Timeout | null = null;
 
   const debounced = (...args: Parameters<F>) => {

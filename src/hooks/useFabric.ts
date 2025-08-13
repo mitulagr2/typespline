@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import * as fabric from 'fabric';
+import { fabric } from 'fabric';
 
 export const useFabric = (
   setCanvasInstance: (canvas: fabric.Canvas) => void
