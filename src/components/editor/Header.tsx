@@ -20,6 +20,7 @@ interface HeaderProps {
 const Header = ({ activeObject, onUploadClick, onAddText, onExport, onReset, onUndo, onRedo, onGroup, onUngroup, canUndo, canRedo }: HeaderProps) => {
   const isSelection = activeObject?.type === 'activeSelection';
   const isGroup = activeObject?.type === 'group';
+  console.log(activeObject);
 
   return (
     <header className="p-3 bg-gray-800 text-white flex justify-between items-center shadow-md z-10">

@@ -8,6 +8,7 @@ import LeftSidebar from "@/components/editor/LeftSidebar";
 import RightSidebar from "@/components/editor/RightSidebar";
 import { useFabric } from '@/hooks/useFabric';
 import { useHistory } from '@/hooks/useHistory';
+import { loadGoogleFont } from '@/lib/font-loader';
 
 export default function Editor() {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
@@ -22,25 +23,32 @@ export default function Editor() {
 
   const { undo, redo, saveState, canUndo, canRedo, setHistory } = useHistory(canvas);
 
-  const updateLayers = () => {
+  const updateLayers = useCallback(() => {
     if (canvas) {
-      // TODO
       setLayers(canvas.getObjects());
     }
-  };
+  }, [canvas]);
 
+  // TODO font load
   const initCanvasCallback = useCallback((fabricCanvas: fabric.Canvas) => {
     // TODO
     setCanvas(fabricCanvas);
 
     const handleSelection = (e: fabric.IEvent) => {
+      console.log(e);
       if (e.selected) {
-        setActiveObject(e.selected[0]);
+        setActiveObject(e.selected[0] || null);
       }
     };
 
-    fabricCanvas.on('selection:created', handleSelection);
-    fabricCanvas.on('selection:updated', handleSelection);
+    const updateActiveObjectState = () => {
+      const activeObj = fabricCanvas.getActiveObject();
+      console.log(activeObj);
+      setActiveObject(activeObj || null);
+    };
+
+    fabricCanvas.on('selection:created', updateActiveObjectState);
+    fabricCanvas.on('selection:updated', updateActiveObjectState);
     fabricCanvas.on('selection:cleared', () => setActiveObject(null));
 
     // fabricCanvas.on('after:render', updateLayers);
@@ -116,21 +124,62 @@ export default function Editor() {
 
     fabricCanvas.on('object:modified', cleanupSnapLines);
     fabricCanvas.on('mouse:up', cleanupSnapLines);
-
-    // Load from localStorage on init
-    const savedState = localStorage.getItem('canvasState');
-    if (savedState) {
-      fabricCanvas.loadFromJSON(savedState, () => {
-        fabricCanvas.renderAll();
-        setHistory([savedState]);
-      });
-    } else {
-      // Initialize history with empty state
-      setHistory([JSON.stringify(fabricCanvas.toJSON())]);
-    }
   }, []);
 
   const canvasRef = useFabric(initCanvasCallback);
+
+  useEffect(() => {
+    if (!canvas) {
+        return;
+    }
+
+    const loadCanvasState = async () => {
+        const savedState = localStorage.getItem('canvasState');
+
+        if (savedState) {
+            // STEP 1: PRE-PROCESS THE JSON TO FIND ALL FONTS
+            const data = JSON.parse(savedState);
+            if (data.objects && Array.isArray(data.objects)) {
+                
+                // Use a Set to get a unique list of font families
+                const fontFamilies = new Set<string>();
+                data.objects.forEach((obj: any) => {
+                    if (obj.fontFamily) {
+                        fontFamilies.add(obj.fontFamily);
+                    }
+                });
+
+                // STEP 2: LOAD ALL UNIQUE FONTS ASYNCHRONOUSLY
+                if (fontFamilies.size > 0) {
+                    // Create an array of promises, one for each font to load
+                    const fontLoadPromises = Array.from(fontFamilies).map(font => 
+                        loadGoogleFont(font) // Using our existing utility
+                    );
+                    
+                    // Wait for all font loading promises to complete.
+                    // Promise.allSettled is robust; it won't fail if one font is invalid.
+                    await Promise.allSettled(fontLoadPromises);
+                }
+            }
+
+            // STEP 3: NOW LOAD THE DATA INTO THE CANVAS
+            // By this point, all fonts are loaded and ready in the browser.
+            canvas.loadFromJSON(savedState, () => {
+                canvas.renderAll();
+                
+                // Sync the React state after the canvas is fully loaded and rendered
+                setHistory([savedState]);
+                updateLayers(); // Assuming updateLayers is wrapped in useCallback
+            });
+
+        } else {
+            // If there's no saved state, initialize the history with the empty canvas.
+            setHistory([JSON.stringify(canvas.toJSON())]);
+        }
+    };
+
+    loadCanvasState();
+  }, [canvas]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,6 +215,7 @@ export default function Editor() {
 
   const handleAddText = () => {
     if (!canvas) return;
+    // TODO
     const text = new fabric.Textbox('Type here', {
       left: 50,
       top: 50,
@@ -193,6 +243,7 @@ export default function Editor() {
   };
 
   const handleLayerLock = (obj: fabric.Object) => {
+    console.log(obj);
     obj.set({
       selectable: !obj.selectable,
       evented: !obj.evented,
@@ -313,6 +364,16 @@ export default function Editor() {
     updateLayers();
   };
 
+  const handleUndo = async () => {
+    await undo();     // 1. Wait for the canvas to finish undoing
+    updateLayers();   // 2. Then, sync the React layer list
+  };
+
+  const handleRedo = async () => {
+    await redo();     // 1. Wait for the canvas to finish redoing
+    updateLayers();   // 2. Then, sync the React layer list
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!activeObject || !canvas) return;
@@ -373,8 +434,8 @@ export default function Editor() {
         onAddText={handleAddText}
         onExport={handleExport}
         onReset={handleReset}
-        onUndo={undo}
-        onRedo={redo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
         onGroup={handleGroup}
         onUngroup={handleUngroup}
         canUndo={canUndo}

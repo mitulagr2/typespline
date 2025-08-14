@@ -11,18 +11,18 @@ export const useHistory = (canvas: fabric.Canvas | null) => {
 
   const saveState = () => {
     if (!canvas || isStateLoading) return;
-    
+
     const jsonState = JSON.stringify(canvas.toJSON());
-    
+
     // Prevent saving the same state consecutively
     if (history.length > 0 && history[history.length - 1] === jsonState) {
       return;
     }
-    
+
     setHistory(prev => {
-        const newHistory = [...prev, jsonState];
-        // Enforce history limit
-        return newHistory.slice(Math.max(newHistory.length - MAX_HISTORY_LENGTH, 0));
+      const newHistory = [...prev, jsonState];
+      // Enforce history limit
+      return newHistory.slice(Math.max(newHistory.length - MAX_HISTORY_LENGTH, 0));
     });
     setRedoStack([]); // Clear redo stack on new action
     localStorage.setItem('canvasState', jsonState);
@@ -44,45 +44,51 @@ export const useHistory = (canvas: fabric.Canvas | null) => {
     };
   }, [canvas, debouncedSaveState]);
 
-  const loadState = (state: string) => {
-    if (!canvas) return;
-    setIsStateLoading(true);
-    canvas.loadFromJSON(state, () => {
-      canvas.renderAll();
-      setIsStateLoading(false);
+  const loadState = (state: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!canvas) {
+        resolve();
+        return;
+      }
+      setIsStateLoading(true);
+      canvas.loadFromJSON(state, () => {
+        canvas.renderAll();
+        setIsStateLoading(false);
+        resolve(); // Resolve the promise AFTER rendering is complete
+      });
     });
   };
 
-  const undo = () => {
+  const undo = async () => {
     if (history.length <= 1 || !canvas) return; // Can't undo the initial state
-    
+
     const currentState = history[history.length - 1];
     const prevState = history[history.length - 2];
 
     setRedoStack(prev => [currentState, ...prev]);
     setHistory(prev => prev.slice(0, -1));
 
-    loadState(prevState);
+    await loadState(prevState);
     localStorage.setItem('canvasState', prevState);
   };
 
-  const redo = () => {
+  const redo = async () => {
     if (redoStack.length === 0 || !canvas) return;
 
     const nextState = redoStack[0];
-    
+
     setHistory(prev => [...prev, nextState]);
     setRedoStack(prev => prev.slice(1));
-    
-    loadState(nextState);
+
+    await loadState(nextState);
     localStorage.setItem('canvasState', nextState);
   };
 
-  return { 
-    undo, 
-    redo, 
-    saveState: debouncedSaveState, 
-    canUndo: history.length > 1, 
+  return {
+    undo,
+    redo,
+    saveState: debouncedSaveState,
+    canUndo: history.length > 1,
     canRedo: redoStack.length > 0,
     setHistory, // Expose to initialize with saved state
   };
