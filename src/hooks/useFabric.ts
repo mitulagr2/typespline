@@ -30,36 +30,3 @@ export const useFabric = (
 
   return canvasRef;
 };
-
-// export const useFabric = () => {
-//   const canvasRef = useRef<HTMLCanvasElement>(null);
-//   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-
-//   useEffect(() => {
-//     const initFabric = () => {
-//       const canvasElement = canvasRef.current;
-//       if (!canvasElement) return;
-
-//       const fabricCanvas = new fabric.Canvas(canvasElement, {
-//         backgroundColor: '#1e1e1e', // A dark background for the workspace
-//         selection: true,
-//         preserveObjectStacking: true,
-//       });
-
-//       setCanvas(fabricCanvas);
-//     };
-
-//     const disposeFabric = () => {
-//       canvas?.dispose();
-//       setCanvas(null);
-//     };
-
-//     initFabric();
-
-//     return () => {
-//       disposeFabric();
-//     };
-//   },); // Empty dependency array ensures this runs only once
-
-//   return { canvasRef, canvas };
-// };

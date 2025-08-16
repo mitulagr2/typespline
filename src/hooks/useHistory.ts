@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { fabric } from 'fabric';
-// import { debounce } from '@/lib/utils';
 
 export interface HistoryItem {
   state: string; // The canvas JSON state
@@ -12,24 +11,7 @@ const MAX_HISTORY_STEPS = 20;
 export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fabric.Object[]) => void) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [redoStack, setRedoStack] = useState<HistoryItem[]>([]);
-  // const [isStateLoading, setIsStateLoading] = useState(false);
-
-  // const loadState = (state: HistoryItem): Promise<void> => {
-  //   return new Promise((resolve) => {
-  //     if (!canvas) {
-  //       resolve();
-  //       return;
-  //     }
-  //     setIsStateLoading(true);
-  //     canvas.loadFromJSON(state, () => {
-  //       canvas.renderAll();
-  //       setIsStateLoading(false);
-  //       updateLayers();
-  //       resolve(); // Resolve the promise AFTER rendering is complete
-  //     });
-  //   });
-  // };
-
+  
   const saveState = (action: string) => {
     if (!canvas) return;
 
@@ -53,9 +35,6 @@ export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fab
     const prevState = history[history.length - 2];
 
     canvas.loadFromJSON(prevState.state, () => {
-      // 3. This callback runs ONLY AFTER the canvas is visually correct.
-      // NOW it is safe to update the declarative React world.
-
       // Update the canvas's visual representation
       canvas.renderAll();
 
@@ -92,7 +71,6 @@ export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fab
     const newHistory = history.slice(0, index + 1);
 
     canvas.loadFromJSON(targetState.state, () => {
-      // 3. NOW, update the declarative world.
       canvas.renderAll();
       setHistory(newHistory);
       setRedoStack(newRedoStack);
@@ -101,31 +79,15 @@ export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fab
     });
   };
 
-  // const debouncedSaveModification = useMemo(
-  //   () => debounce(() => saveState('Modify Properties'), 500), // Give it a clear name and maybe a slightly longer debounce
-  //   [saveState]
-  // );
-
-  // useEffect(() => {
-  //   if (!canvas) return;
-
-  //   canvas.on('object:modified', debouncedSaveModification);
-
-  //   return () => {
-  //     canvas.off('object:modified', debouncedSaveModification);
-  //   };
-  // }, [canvas, debouncedSaveModification]);
-
   return {
     history,
-    currentIndex: history.length - 1, // Expose the current index for the UI
+    currentIndex: history.length - 1,
     jumpToState,
-    saveState, // Expose the specific saveState, not just the debounced one
-    // debouncedSaveModification,
+    saveState,
     undo,
     redo,
     canUndo: history.length > 1,
     canRedo: redoStack.length > 0,
-    setHistory, // We still need this for initial loading
+    setHistory,
   };
 };

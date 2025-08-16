@@ -1,4 +1,4 @@
-"use client"; // This is the most important line!
+"use client";
 
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';

@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlignCenter, AlignLeft, AlignRight } from 'lucide-react';
 
-// Define a type for our local state
 interface TextProperties {
   fill: string;
   fontSize: number;
@@ -25,6 +24,21 @@ interface TextProperties {
   shadow: fabric.Shadow | undefined;
 }
 
+const getNumericFontWeight = (weight: string | number | undefined): number => {
+  if (typeof weight === 'number') {
+    return weight;
+  }
+  if (typeof weight === 'string') {
+    if (weight.toLowerCase() === 'bold') {
+      return 700;
+    }
+    // "normal" and any other string will default to 400
+    return 400;
+  }
+  // Default for null/undefined
+  return 400;
+};
+
 interface RightSidebarProps {
   activeObject: fabric.Object | null;
   onUpdate: (props: Partial<fabric.ITextOptions | { shadow: fabric.Shadow | undefined }>) => void;
@@ -34,12 +48,6 @@ interface RightSidebarProps {
 const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarProps) => {
   const [fontList, setFontList] = useState<string[]>([]);
   const [properties, setProperties] = useState<TextProperties | null>(null);
-  // const isTextbox = activeObject?.type === 'textbox';
-
-  // This is crucial for performance with sliders.
-  // const debouncedOnUpdate = useCallback(debounce((props) => {
-  //   onUpdate(props);
-  // }, 100), [onUpdate]);
 
   const debouncedSave = useMemo(() =>
     debounce(() => {
@@ -56,7 +64,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
         lineHeight: textbox.lineHeight ?? 1.16,
         textAlign: textbox.textAlign ?? 'left',
         fontFamily: textbox.fontFamily ?? 'Arial',
-        fontWeight: (textbox.fontWeight as number) ?? 400,
+        fontWeight: getNumericFontWeight(textbox.fontWeight ?? 400),
         opacity: textbox.opacity ?? 1,
         charSpacing: textbox.charSpacing ?? 0,
         shadow: textbox.shadow as fabric.Shadow | undefined,
@@ -101,7 +109,6 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
     // Update local state instantly
     setProperties({ ...properties, shadow: newShadow });
 
-    // Update the canvas (debounced for sliders)
     onUpdate({ shadow: newShadow });
     debouncedSave();
   };
@@ -151,7 +158,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
 
   if (!activeObject || !properties) {
     return (
-      <aside className="w-80 bg-gray-800 text-white p-4 shadow-lg">
+      <aside className="w-80 bg-background text-white p-4 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">Properties</h2>
         <p className="text-gray-400">Select a text layer to see its properties.</p>
       </aside>
@@ -165,7 +172,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
       {/* --- Main Properties --- */}
       <div className="space-y-4">
 
-        {/* Font Family - Refactored with ShadCN Select */}
+        {/* Font Family */}
         <div className="space-y-2">
           <Label>Font Family</Label>
           <Select onValueChange={handleFontChange} value={properties.fontFamily}>
@@ -182,7 +189,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
           </Select>
         </div>
 
-        {/* Font Size & Weight - Refactored with ShadCN Input/Label */}
+        {/* Font Size & Weight */}
         <div className="flex gap-4">
           <div className="flex-1 space-y-2">
             <Label htmlFor="fontSize">Size</Label>
@@ -205,7 +212,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
           </div>
         </div>
 
-        {/* Color & Opacity - Refactored with ShadCN Slider */}
+        {/* Color & Opacity */}
         <div className="flex gap-4 items-end">
           <div className="flex-1 space-y-2">
             <Label>Color</Label>
@@ -226,7 +233,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
           </div>
         </div>
 
-        {/* Alignment - Refactored with ShadCN Button */}
+        {/* Alignment */}
         <div className="space-y-2">
           <Label>Alignment</Label>
           <div className="flex items-center justify-between border rounded-md">
@@ -257,7 +264,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
           </div>
         </div>
 
-        {/* Line Height & Spacing - Refactored with ShadCN Slider */}
+        {/* Line Height & Spacing */}
         <div className="space-y-2">
           <Label>Line Height</Label>
           <Slider value={[properties.lineHeight]} onValueChange={(v) => handlePropertyChange('lineHeight', v[0])} min={0.5} max={3} step={0.1} />
@@ -270,7 +277,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
 
       {/* --- Shadow Properties --- */}
       <div className="space-y-4 pt-4 border-t">
-        {/* Shadow Toggle - Refactored with ShadCN Checkbox/Label */}
+        {/* Shadow Toggle */}
         <div className="flex items-center space-x-2">
           <Checkbox 
             id="shadow-toggle"

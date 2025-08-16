@@ -32,7 +32,6 @@ export default function Editor() {
     currentIndex,
     jumpToState,
     saveState,
-    // debouncedSaveModification,
     undo,
     redo,
     canUndo,
@@ -40,29 +39,17 @@ export default function Editor() {
     setHistory
   } = useHistory(canvas, setLayers);
 
-  // TODO font load
   const initCanvasCallback = useCallback((fabricCanvas: fabric.Canvas) => {
-    // TODO
     setCanvas(fabricCanvas);
-
-    const handleSelection = (e: fabric.IEvent) => {
-      console.log(e);
-      if (e.selected) {
-        setActiveObject(e.selected[0] || null);
-      }
-    };
 
     const updateActiveObjectState = () => {
       const activeObj = fabricCanvas.getActiveObject();
-      console.log(activeObj);
       setActiveObject(activeObj || null);
     };
 
     fabricCanvas.on('selection:created', updateActiveObjectState);
     fabricCanvas.on('selection:updated', updateActiveObjectState);
     fabricCanvas.on('selection:cleared', () => setActiveObject(null));
-
-    // fabricCanvas.on('after:render', updateLayers);
 
     const snapThreshold = 6; // pixels
 
@@ -84,18 +71,6 @@ export default function Editor() {
       if (snappedToH) {
         obj.set({ top: canvasCenter.top - obj.getScaledHeight() / 2 }).setCoords();
       }
-
-      // // Vertical Snapping
-      // if (Math.abs(objCenter.x - canvasCenter.x) < snapThreshold) {
-      //   obj.set({ left: canvasCenter.x - obj.getScaledWidth() / 2 }).setCoords();
-      //   snappedToV = true;
-      // }
-
-      // // Horizontal Snapping
-      // if (Math.abs(objCenter.y - canvasCenter.y) < snapThreshold) {
-      //   obj.set({ top: canvasCenter.y - obj.getScaledHeight() / 2 }).setCoords();
-      //   snappedToH = true;
-      // }
 
       // Draw or remove vertical line
       if (snappedToV && !verticalLine.current) {
@@ -183,7 +158,6 @@ export default function Editor() {
           await Promise.allSettled(fontLoadPromises);
         }
 
-        // STEP 3: NOW LOAD THE DATA INTO THE CANVAS
         // By this point, all fonts are loaded and ready in the browser.
         canvas.loadFromJSON(savedState, () => {
 
@@ -192,7 +166,7 @@ export default function Editor() {
             const workspace = canvas.getElement().parentElement;
 
             if (workspace) {
-              // 2. Re-run the same dimension calculation as in handleImageUpload.
+              // Re-run the same dimension calculation as in handleImageUpload.
               const containerWidth = workspace.clientWidth - 40; // Assuming p-4 padding
               const containerHeight = workspace.clientHeight - 40;
 
@@ -202,13 +176,13 @@ export default function Editor() {
                 containerHeight / (bgImage.height || 1)
               );
 
-              // 3. Set the dimensions of the canvas element itself.
+              // Set the dimensions of the canvas element itself.
               canvas.setDimensions({
                 width: (bgImage.width || 0) * scale,
                 height: (bgImage.height || 0) * scale
               });
 
-              // 4. Ensure the background image is scaled correctly within the new canvas size.
+              // Ensure the background image is scaled correctly within the new canvas size.
               bgImage.set({ scaleX: scale, scaleY: scale });
             }
           }
@@ -243,13 +217,10 @@ export default function Editor() {
     if (!file || !canvas) return;
 
     const reader = new FileReader();
-    // TODO
     reader.onload = (event) => {
       const imgObj = new Image();
       imgObj.src = event.target?.result as string;
       imgObj.onload = () => {
-        // err
-        console.log(canvas);
         const workspace = canvas.getElement().parentElement;
         if (!workspace) return;
 
@@ -272,7 +243,6 @@ export default function Editor() {
 
   const handleAddText = () => {
     if (!canvas) return;
-    // TODO
     const text = new fabric.Textbox('Type here', {
       left: 50,
       top: 50,
@@ -300,7 +270,6 @@ export default function Editor() {
   };
 
   const handleLayerLock = (obj: fabric.Object) => {
-    console.log(obj);
     obj.set({
       selectable: !obj.selectable,
       evented: !obj.evented,
@@ -493,7 +462,6 @@ export default function Editor() {
   return (
     <main className="flex flex-col h-screen bg-background text-foreground">
 
-      {/* The Header is already refactored and will inherit the theme */}
       <Header
         activeObject={activeObject}
         onUploadClick={() => fileInputRef.current?.click()}
@@ -508,13 +476,10 @@ export default function Editor() {
         canRedo={canRedo}
       />
 
-      {/* This input is hidden, so no changes are needed */}
       <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/png" />
 
-      {/* This main content wrapper is structurally correct */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* The LeftSidebar is already refactored */}
         <LeftSidebar
           history={history}
           currentIndex={currentIndex}
@@ -527,15 +492,12 @@ export default function Editor() {
           onLayerDuplicate={handleLayerDuplicate}
         />
 
-        {/* 2. Use the "muted" theme color for the central workspace area */}
         <section className="flex-1 flex items-center justify-center p-4 overflow-auto bg-muted">
 
-          {/* The Canvas component is already refactored */}
           <Canvas canvasRef={canvasRef} />
 
         </section>
 
-        {/* The RightSidebar is already refactored */}
         <RightSidebar
           activeObject={activeObject}
           onUpdate={updateActiveObject}

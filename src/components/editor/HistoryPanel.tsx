@@ -21,18 +21,11 @@ const HistoryPanel = ({ history, currentIndex, onJump }: HistoryPanelProps) => {
         History
       </h3>
       
-      {/* 3. Use the ShadCN ScrollArea component */}
       <ScrollArea className="h-48 rounded-md border p-2">
-        {history.length <= 1 && ( // Show empty state if only "Initial State" exists
-          <p className="text-muted-foreground text-sm text-center p-2">No actions yet.</p>
-        )}
         
-        {/* 4. Map over history items and render them as Buttons */}
+        {/* Map over history items and render them as Buttons */}
         <div className="space-y-1">
           {[...history].reverse().map((item, i) => {
-            // We can skip the "Initial State" from being displayed if we want
-            if (item.action === 'Initial State' || item.action === 'Load from Save') return null;
-
             const index = history.length - 1 - i;
             const isCurrent = index === currentIndex;
             
@@ -41,7 +34,6 @@ const HistoryPanel = ({ history, currentIndex, onJump }: HistoryPanelProps) => {
                 key={`${index}-${item.action}`}
                 onClick={() => onJump(index)}
                 disabled={isCurrent}
-                // 5. Use ShadCN variants for styling
                 variant={isCurrent ? 'secondary' : 'ghost'}
                 className="w-full justify-start text-sm h-8"
               >

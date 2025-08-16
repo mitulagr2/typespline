@@ -39,13 +39,11 @@ interface HeaderProps {
 const Header = ({ activeObject, onUploadClick, onAddText, onExport, onReset, onUndo, onRedo, onGroup, onUngroup, canUndo, canRedo }: HeaderProps) => {
   const isSelection = activeObject?.type === 'activeSelection';
   const isGroup = activeObject?.type === 'group';
-  console.log(activeObject);
 
   return (
     <header className="h-16 bg-background border-b px-4 flex justify-between items-center z-10">
       <h1 className="text-xl font-bold">Image Text Composer</h1>
       
-      {/* 4. Wrap the entire button group in a TooltipProvider */}
       <TooltipProvider>
         <div className="flex items-center gap-2">
           
@@ -71,7 +69,6 @@ const Header = ({ activeObject, onUploadClick, onAddText, onExport, onReset, onU
             </TooltipContent>
           </Tooltip>
 
-          {/* 5. Use ShadCN Separator */}
           <Separator orientation="vertical" className="h-8 mx-2" />
 
           {/* Grouping Group */}
@@ -125,7 +122,6 @@ const Header = ({ activeObject, onUploadClick, onAddText, onExport, onReset, onU
           {/* Final Actions Group */}
           <Tooltip>
             <TooltipTrigger asChild>
-              {/* 6. Use the `destructive` variant for the Reset button */}
               <Button variant="destructive" size="icon" onClick={onReset}>
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -134,7 +130,6 @@ const Header = ({ activeObject, onUploadClick, onAddText, onExport, onReset, onU
               <p>Reset Canvas</p>
             </TooltipContent>
           </Tooltip>
-          {/* 7. Use the default primary style for the main action */}
           <Button onClick={onExport} className="gap-x-2">
             <Download className="h-4 w-4" />
             Export

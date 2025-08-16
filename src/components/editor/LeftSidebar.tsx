@@ -34,7 +34,6 @@ interface LeftSidebarProps {
 const LeftSidebar = ({ history, currentIndex, onJumpToState, layers, activeObject, onLayerSelect, onLayerMove, onLayerLock, onLayerDuplicate }: LeftSidebarProps) => {
   return (
     <aside className="w-72 bg-background border-l p-4 flex flex-col gap-y-4">
-      {/* HistoryPanel remains the same */}
       <HistoryPanel
         history={history}
         currentIndex={currentIndex}
@@ -48,7 +47,6 @@ const LeftSidebar = ({ history, currentIndex, onJumpToState, layers, activeObjec
         </h2>
 
         <div className="flex-grow space-y-1 overflow-y-auto">
-          {/* 5. Refactor the layer list items */}
           {[...layers].reverse().map((layer) => {
             const isActive = layer === activeObject;
             const isLocked = !layer.selectable;
@@ -64,8 +62,7 @@ const LeftSidebar = ({ history, currentIndex, onJumpToState, layers, activeObjec
 
             return (
               <div
-                key={(layer as any).id || `layer-${Math.random()}`} // A stable ID is best
-                // 6. Use the `cn` utility for clean conditional classes
+                key={(layer as any).id || `layer-${Math.random()}`}
                 className={cn(
                   "p-2 rounded-md flex items-center justify-between transition-colors group",
                   isActive 
@@ -77,7 +74,6 @@ const LeftSidebar = ({ history, currentIndex, onJumpToState, layers, activeObjec
                   {layerName}
                 </div>
                 <div className="flex items-center gap-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {/* 7. Replace buttons with ShadCN + Lucide icons */}
                   <Button variant="ghost" size="icon" onClick={() => onLayerLock(layer)} title={isLocked ? "Unlock" : "Lock"}>
                     {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                   </Button>

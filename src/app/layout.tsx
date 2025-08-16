@@ -12,14 +12,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// import { Inter } from "next/font/google";
-// import "./globals.css";
-
-// const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Image Text Composer",
-  description: "Adomate Coding Assignment",
+  title: "Typespline",
+  description: "Image Text Composer",
 };
 
 export default function RootLayout({
@@ -29,7 +24,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      {/* <body className={inter.className}>{children}</body> */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
