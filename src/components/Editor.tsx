@@ -32,7 +32,7 @@ export default function Editor() {
     currentIndex,
     jumpToState,
     saveState,
-    debouncedSaveModification,
+    // debouncedSaveModification,
     undo,
     redo,
     canUndo,

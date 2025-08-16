@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { fabric } from 'fabric';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { HistoryItem } from '@/hooks/useHistory';
 import HistoryPanel from './HistoryPanel';
 
@@ -37,7 +37,7 @@ const LeftSidebar = ({ history, currentIndex, onJumpToState, layers, activeObjec
         currentIndex={currentIndex}
         onJump={onJumpToState}
       />
-      
+
       <h2 className="text-lg font-semibold mb-4">Layers</h2>
 
       <div className="flex-grow space-y-2 overflow-y-auto">

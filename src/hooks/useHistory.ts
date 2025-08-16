@@ -106,22 +106,22 @@ export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fab
     [saveState]
   );
 
-  useEffect(() => {
-    if (!canvas) return;
+  // useEffect(() => {
+  //   if (!canvas) return;
 
-    canvas.on('object:modified', debouncedSaveModification);
+  //   canvas.on('object:modified', debouncedSaveModification);
 
-    return () => {
-      canvas.off('object:modified', debouncedSaveModification);
-    };
-  }, [canvas, debouncedSaveModification]);
+  //   return () => {
+  //     canvas.off('object:modified', debouncedSaveModification);
+  //   };
+  // }, [canvas, debouncedSaveModification]);
 
   return {
     history,
     currentIndex: history.length - 1, // Expose the current index for the UI
     jumpToState,
     saveState, // Expose the specific saveState, not just the debounced one
-    debouncedSaveModification,
+    // debouncedSaveModification,
     undo,
     redo,
     canUndo: history.length > 1,
