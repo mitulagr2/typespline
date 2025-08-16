@@ -138,6 +138,44 @@ const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
             />
           </div>
         </div>
+
+        <div>
+          <label className="text-sm text-gray-400 mb-2 block">Alignment</label>
+          <div className="flex items-center justify-between bg-gray-700 rounded-md">
+            {/* Left Align Button */}
+            <button
+              onClick={() => onUpdate({ textAlign: 'left' })}
+              className={`flex-1 p-2 rounded-md transition-colors ${textbox.textAlign === 'left' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}
+              title="Align Left"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
+                <path d="M3 4H21V6H3V4ZM3 9H15V11H3V9ZM3 14H21V16H3V14ZM3 19H15V21H3V19Z" />
+              </svg>
+            </button>
+
+            {/* Center Align Button */}
+            <button
+              onClick={() => onUpdate({ textAlign: 'center' })}
+              className={`flex-1 p-2 rounded-md transition-colors ${textbox.textAlign === 'center' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}
+              title="Align Center"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
+                <path d="M3 4H21V6H3V4ZM5 9H19V11H5V9ZM3 14H21V16H3V14ZM5 19H19V21H5V19Z" />
+              </svg>
+            </button>
+
+            {/* Right Align Button */}
+            <button
+              onClick={() => onUpdate({ textAlign: 'right' })}
+              className={`flex-1 p-2 rounded-md transition-colors ${textbox.textAlign === 'right' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}
+              title="Align Right"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
+                <path d="M3 4H21V6H3V4ZM9 9H21V11H9V9ZM3 14H21V16H3V14ZM9 19H21V21H9V19Z" />
+              </svg>
+            </button>
+          </div>
+        </div>
       
         <Slider
           label="Line Height"
