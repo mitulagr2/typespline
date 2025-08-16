@@ -186,6 +186,33 @@ export default function Editor() {
         // STEP 3: NOW LOAD THE DATA INTO THE CANVAS
         // By this point, all fonts are loaded and ready in the browser.
         canvas.loadFromJSON(savedState, () => {
+
+          if (canvas.backgroundImage instanceof fabric.Image) {
+            const bgImage = canvas.backgroundImage;
+            const workspace = canvas.getElement().parentElement;
+
+            if (workspace) {
+              // 2. Re-run the same dimension calculation as in handleImageUpload.
+              const containerWidth = workspace.clientWidth - 40; // Assuming p-4 padding
+              const containerHeight = workspace.clientHeight - 40;
+
+              // bgImage.width and bgImage.height hold the original dimensions
+              const scale = Math.min(
+                containerWidth / (bgImage.width || 1),
+                containerHeight / (bgImage.height || 1)
+              );
+
+              // 3. Set the dimensions of the canvas element itself.
+              canvas.setDimensions({
+                width: (bgImage.width || 0) * scale,
+                height: (bgImage.height || 0) * scale
+              });
+
+              // 4. Ensure the background image is scaled correctly within the new canvas size.
+              bgImage.set({ scaleX: scale, scaleY: scale });
+            }
+          }
+
           canvas.renderAll();
 
           const initialHistoryItem: HistoryItem = {
@@ -209,7 +236,7 @@ export default function Editor() {
     };
 
     loadCanvasState();
-  }, [canvas]);
+  }, [canvas, setHistory, updateLayers]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -464,7 +491,9 @@ export default function Editor() {
   }, [activeObject, canvas, saveState]);
 
   return (
-    <main className="flex flex-col h-screen bg-gray-900 text-white">
+    <main className="flex flex-col h-screen bg-background text-foreground">
+
+      {/* The Header is already refactored and will inherit the theme */}
       <Header
         activeObject={activeObject}
         onUploadClick={() => fileInputRef.current?.click()}
@@ -478,8 +507,14 @@ export default function Editor() {
         canUndo={canUndo}
         canRedo={canRedo}
       />
+
+      {/* This input is hidden, so no changes are needed */}
       <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/png" />
+
+      {/* This main content wrapper is structurally correct */}
       <div className="flex flex-1 overflow-hidden">
+
+        {/* The LeftSidebar is already refactored */}
         <LeftSidebar
           history={history}
           currentIndex={currentIndex}
@@ -491,14 +526,22 @@ export default function Editor() {
           onLayerLock={handleLayerLock}
           onLayerDuplicate={handleLayerDuplicate}
         />
-        <section className="flex-1 flex items-center justify-center p-4 overflow-auto bg-gray-700">
+
+        {/* 2. Use the "muted" theme color for the central workspace area */}
+        <section className="flex-1 flex items-center justify-center p-4 overflow-auto bg-muted">
+
+          {/* The Canvas component is already refactored */}
           <Canvas canvasRef={canvasRef} />
+
         </section>
+
+        {/* The RightSidebar is already refactored */}
         <RightSidebar
           activeObject={activeObject}
           onUpdate={updateActiveObject}
           onSaveHistory={saveState}
         />
+
       </div>
     </main>
   );

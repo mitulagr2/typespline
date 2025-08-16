@@ -4,9 +4,13 @@ import { fabric } from 'fabric';
 import React, { useEffect, useMemo, useState } from 'react';
 import { debounce } from 'lodash';
 import { loadGoogleFont } from '@/lib/font-loader';
-import { Input } from '../ui/input';
-import { Slider } from '../ui/slider';
-import { Label } from '../ui/label';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlignCenter, AlignLeft, AlignRight } from 'lucide-react';
 
 // Define a type for our local state
 interface TextProperties {
@@ -155,162 +159,145 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
   }
 
   return (
-    <aside className="w-80 bg-gray-800 text-white p-4 flex flex-col space-y-4 shadow-lg">
+    <aside className="w-80 bg-background border-l p-4 flex flex-col gap-y-6">
       <h2 className="text-lg font-semibold">Properties</h2>
 
       {/* --- Main Properties --- */}
-      <div className="border-b border-gray-600 pb-4 space-y-4">
+      <div className="space-y-4">
 
-        {/* Font Family */}
-        <div>
-          <label className="text-sm text-gray-400 mb-1 block">Font Family</label>
-          <select
-            value={properties.fontFamily}
-            onChange={(e) => handleFontChange(e.target.value)}
-            className="bg-gray-700 border border-gray-600 rounded-md p-2 w-full text-white"
-          >
-            <option value="Arial">Arial</option>
-            <option value="Helvetica">Helvetica</option>
-            {fontList.map(font => (
-              <option key={font} value={font}>{font}</option>
-            ))}
-          </select>
+        {/* Font Family - Refactored with ShadCN Select */}
+        <div className="space-y-2">
+          <Label>Font Family</Label>
+          <Select onValueChange={handleFontChange} value={properties.fontFamily}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a font" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Arial">Arial</SelectItem>
+              <SelectItem value="Helvetica">Helvetica</SelectItem>
+              {fontList.map(font => (
+                <SelectItem key={font} value={font}>{font}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Font Size & Weight */}
+        {/* Font Size & Weight - Refactored with ShadCN Input/Label */}
         <div className="flex gap-4">
-          <Label htmlFor="Size">Size</Label>
-          <Input
-            id="Size"
-            type="number"
-            value={properties.fontSize}
-            onChange={(e) => handlePropertyChange('fontSize', parseInt(e.target.value, 10))}
-          />
-          <Label htmlFor="Weight">Weight</Label>
-          <Input
-            id="Weight"
-            type="number"
-            step="100"
-            min="100"
-            max="900"
-            value={properties.fontWeight}
-            onChange={(e) => handlePropertyChange('fontWeight', e.target.value)}
-          />
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="fontSize">Size</Label>
+            <Input
+              id="fontSize"
+              type="number"
+              value={properties.fontSize}
+              onChange={(e) => handlePropertyChange('fontSize', parseInt(e.target.value, 10))}
+            />
+          </div>
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="fontWeight">Weight</Label>
+            <Input
+              id="fontWeight"
+              type="number"
+              step="100" min="100" max="900"
+              value={properties.fontWeight}
+              onChange={(e) => handlePropertyChange('fontWeight', parseInt(e.target.value, 10))}
+            />
+          </div>
         </div>
 
-        {/* Color & Opacity */}
+        {/* Color & Opacity - Refactored with ShadCN Slider */}
         <div className="flex gap-4 items-end">
-          <div className="flex-1">
-            <label className="text-sm text-gray-400 mb-1 block">Color</label>
-            <input
+          <div className="flex-1 space-y-2">
+            <Label>Color</Label>
+            <Input
               type="color"
-              value={properties.fill as string}
+              value={properties.fill}
               onChange={(e) => handlePropertyChange('fill', e.target.value)}
-              className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer"
+              className="w-full h-10 p-1 cursor-pointer" // Standard input, styled to match
             />
           </div>
-          <div className="flex-1">
-            <label className="text-sm text-gray-400 mb-1 block">Opacity</label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={properties.opacity}
-              onChange={(e) => handlePropertyChange('opacity', parseFloat(e.target.value))}
-              className="w-full"
+          <div className="flex-1 space-y-2">
+            <Label>Opacity</Label>
+            <Slider
+              value={[properties.opacity]}
+              onValueChange={(values) => handlePropertyChange('opacity', values[0])}
+              min={0} max={1} step={0.01}
             />
           </div>
         </div>
 
-        <div>
-          <label className="text-sm text-gray-400 mb-2 block">Alignment</label>
-          <div className="flex items-center justify-between bg-gray-700 rounded-md">
-            {/* Left Align Button */}
-            <button
+        {/* Alignment - Refactored with ShadCN Button */}
+        <div className="space-y-2">
+          <Label>Alignment</Label>
+          <div className="flex items-center justify-between border rounded-md">
+            <Button
+              variant={properties.textAlign === 'left' ? 'default' : 'ghost'}
+              size="icon"
               onClick={() => handlePropertyChange('textAlign', 'left')}
-              className={`flex-1 p-2 rounded-md transition-colors ${properties.textAlign === 'left' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}
-              title="Align Left"
+              className="flex-1 rounded-r-none"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
-                <path d="M3 4H21V6H3V4ZM3 9H15V11H3V9ZM3 14H21V16H3V14ZM3 19H15V21H3V19Z" />
-              </svg>
-            </button>
-
-            {/* Center Align Button */}
-            <button
+              <AlignLeft />
+            </Button>
+            <Button
+              variant={properties.textAlign === 'center' ? 'default' : 'ghost'}
+              size="icon"
               onClick={() => handlePropertyChange('textAlign', 'center')}
-              className={`flex-1 p-2 rounded-md transition-colors ${properties.textAlign === 'center' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}
-              title="Align Center"
+              className="flex-1 rounded-none border-x"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
-                <path d="M3 4H21V6H3V4ZM5 9H19V11H5V9ZM3 14H21V16H3V14ZM5 19H19V21H5V19Z" />
-              </svg>
-            </button>
-
-            {/* Right Align Button */}
-            <button
+              <AlignCenter />
+            </Button>
+            <Button
+              variant={properties.textAlign === 'right' ? 'default' : 'ghost'}
+              size="icon"
               onClick={() => handlePropertyChange('textAlign', 'right')}
-              className={`flex-1 p-2 rounded-md transition-colors ${properties.textAlign === 'right' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}
-              title="Align Right"
+              className="flex-1 rounded-l-none"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
-                <path d="M3 4H21V6H3V4ZM9 9H21V11H9V9ZM3 14H21V16H3V14ZM9 19H21V21H9V19Z" />
-              </svg>
-            </button>
+              <AlignRight />
+            </Button>
           </div>
         </div>
 
-        <Label htmlFor="Line Height">Line Height</Label>
-        <Slider
-          id="Line Height"
-          min={0.5}
-          max={3}
-          step={0.1}
-          value={[properties.lineHeight || 1.16]}
-          onValueChange={(values) => handlePropertyChange('lineHeight', values[0])}
-        />
-        <Label htmlFor="Letter Spacing">Letter Spacing</Label>
-        <Slider
-          id="Letter Spacing"
-          min={-200}
-          max={800}
-          step={10}
-          value={[properties.charSpacing || 0]}
-          onValueChange={(values) => handlePropertyChange('charSpacing', values[0])}
-        />
+        {/* Line Height & Spacing - Refactored with ShadCN Slider */}
+        <div className="space-y-2">
+          <Label>Line Height</Label>
+          <Slider value={[properties.lineHeight]} onValueChange={(v) => handlePropertyChange('lineHeight', v[0])} min={0.5} max={3} step={0.1} />
+        </div>
+        <div className="space-y-2">
+          <Label>Letter Spacing</Label>
+          <Slider value={[properties.charSpacing]} onValueChange={(v) => handlePropertyChange('charSpacing', v[0])} min={-200} max={800} step={10} />
+        </div>
       </div>
 
       {/* --- Shadow Properties --- */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-md font-semibold">Shadow</h3>
-          <input
-            type="checkbox"
+      <div className="space-y-4 pt-4 border-t">
+        {/* Shadow Toggle - Refactored with ShadCN Checkbox/Label */}
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="shadow-toggle"
             checked={!!properties.shadow}
-            onChange={(e) => toggleShadow(e.target.checked)}
-            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+            onCheckedChange={(checked) => toggleShadow(checked as boolean)}
           />
+          <Label htmlFor="shadow-toggle" className="text-md font-semibold cursor-pointer">Shadow</Label>
         </div>
+        
         {properties.shadow && (
-          <div className="space-y-4 p-4 bg-gray-900/50 rounded-lg">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="text-sm text-gray-400 mb-1 block">Color</label>
-                <input type="color" value={properties.shadow?.color}
-                  onChange={(e) => handleShadowPropertyChange('color', e.target.value)}
-                  className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-              </div>
+          <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <div className="flex-1 space-y-2">
+              <Label>Color</Label>
+              <Input type="color" value={properties.shadow.color} onChange={(e) => handleShadowPropertyChange('color', e.target.value)} className="w-full h-10 p-1 cursor-pointer" />
             </div>
-            <Label htmlFor="Blur">Blur</Label>
-            <Slider id="Blur" min={0} max={50} step={1}
-              value={[properties.shadow?.blur || 0]} onValueChange={(values) => handleShadowPropertyChange('blur', values[0])} />
-            <Label htmlFor="Offset X">Offset X</Label>
-            <Slider id="Offset X" min={-50} max={50} step={1}
-              value={[properties.shadow?.offsetX || 0]} onValueChange={(values) => handleShadowPropertyChange('offsetX', values[0])} />
-            <Label htmlFor="Offset Y">Offset Y</Label>
-            <Slider id="Offset Y" min={-50} max={50} step={1}
-              value={[properties.shadow?.offsetY || 0]} onValueChange={(values) => handleShadowPropertyChange('offsetY', values[0])} />
+            <div className="space-y-2">
+              <Label>Blur</Label>
+              <Slider value={[properties.shadow.blur || 0]} onValueChange={(v) => handleShadowPropertyChange('blur', v[0])} min={0} max={50} step={1} />
+            </div>
+            <div className="space-y-2">
+              <Label>Offset X</Label>
+              <Slider value={[properties.shadow.offsetX || 0]} onValueChange={(v) => handleShadowPropertyChange('offsetX', v[0])} min={-50} max={50} step={1} />
+            </div>
+            <div className="space-y-2">
+              <Label>Offset Y</Label>
+              <Slider value={[properties.shadow.offsetY || 0]} onValueChange={(v) => handleShadowPropertyChange('offsetY', v[0])} min={-50} max={50} step={1} />
+            </div>
           </div>
         )}
       </div>

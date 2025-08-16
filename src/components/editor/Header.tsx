@@ -1,7 +1,26 @@
 "use client";
 
-import { Button } from "../ui/button";
 import { fabric } from "fabric";
+
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import {
+  Undo2,
+  Redo2,
+  Group,
+  Ungroup,
+  Upload,
+  Type,
+  Trash2,
+  Download,
+} from "lucide-react";
 
 interface HeaderProps {
   activeObject: fabric.Object | null;
@@ -23,21 +42,105 @@ const Header = ({ activeObject, onUploadClick, onAddText, onExport, onReset, onU
   console.log(activeObject);
 
   return (
-    <header className="p-3 bg-gray-800 text-white flex justify-between items-center shadow-md z-10">
+    <header className="h-16 bg-background border-b px-4 flex justify-between items-center z-10">
       <h1 className="text-xl font-bold">Image Text Composer</h1>
-      <div className="flex items-center gap-2">
-        <Button onClick={onUndo} disabled={!canUndo}>Undo</Button>
-        <Button onClick={onRedo} disabled={!canRedo}>Redo</Button>
-        <div className="w-px h-8 bg-gray-600 mx-2" />
-        <Button onClick={onGroup} disabled={!isSelection}>Group</Button>
-        <Button onClick={onUngroup} disabled={!isGroup}>Ungroup</Button>
-        <div className="w-px h-8 bg-gray-600 mx-2" />
-        <Button onClick={onUploadClick}>Upload Image</Button>
-        <Button onClick={onAddText}>Add Text</Button>
-        <div className="w-px h-8 bg-gray-600 mx-2" />
-        <Button onClick={onReset} className="bg-red-600 hover:bg-red-700">Reset</Button>
-        <Button onClick={onExport} className="bg-green-600 hover:bg-green-700">Export</Button>
-      </div>
+      
+      {/* 4. Wrap the entire button group in a TooltipProvider */}
+      <TooltipProvider>
+        <div className="flex items-center gap-2">
+          
+          {/* Undo/Redo Group */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo}>
+                <Undo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Undo</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo}>
+                <Redo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Redo</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* 5. Use ShadCN Separator */}
+          <Separator orientation="vertical" className="h-8 mx-2" />
+
+          {/* Grouping Group */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onGroup} disabled={!isSelection}>
+                <Group className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Group</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onUngroup} disabled={!isGroup}>
+                <Ungroup className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ungroup</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Separator orientation="vertical" className="h-8 mx-2" />
+
+          {/* Object Creation Group */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onUploadClick}>
+                <Upload className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Upload Image</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onAddText}>
+                <Type className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add Text</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Separator orientation="vertical" className="h-8 mx-2" />
+
+          {/* Final Actions Group */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* 6. Use the `destructive` variant for the Reset button */}
+              <Button variant="destructive" size="icon" onClick={onReset}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Reset Canvas</p>
+            </TooltipContent>
+          </Tooltip>
+          {/* 7. Use the default primary style for the main action */}
+          <Button onClick={onExport} className="gap-x-2">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      </TooltipProvider>
     </header>
   );
 };

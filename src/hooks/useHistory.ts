@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState } from 'react';
 import { fabric } from 'fabric';
-import { debounce } from '@/lib/utils';
+// import { debounce } from '@/lib/utils';
 
 export interface HistoryItem {
   state: string; // The canvas JSON state
@@ -12,7 +12,7 @@ const MAX_HISTORY_STEPS = 20;
 export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fabric.Object[]) => void) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [redoStack, setRedoStack] = useState<HistoryItem[]>([]);
-  const [isStateLoading, setIsStateLoading] = useState(false);
+  // const [isStateLoading, setIsStateLoading] = useState(false);
 
   // const loadState = (state: HistoryItem): Promise<void> => {
   //   return new Promise((resolve) => {
@@ -31,7 +31,7 @@ export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fab
   // };
 
   const saveState = (action: string) => {
-    if (!canvas || isStateLoading) return;
+    if (!canvas) return;
 
     const jsonState = JSON.stringify(canvas.toJSON());
 
@@ -101,10 +101,10 @@ export const useHistory = (canvas: fabric.Canvas | null, setLayers: (layers: fab
     });
   };
 
-  const debouncedSaveModification = useMemo(
-    () => debounce(() => saveState('Modify Properties'), 500), // Give it a clear name and maybe a slightly longer debounce
-    [saveState]
-  );
+  // const debouncedSaveModification = useMemo(
+  //   () => debounce(() => saveState('Modify Properties'), 500), // Give it a clear name and maybe a slightly longer debounce
+  //   [saveState]
+  // );
 
   // useEffect(() => {
   //   if (!canvas) return;

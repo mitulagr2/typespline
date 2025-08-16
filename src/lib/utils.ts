@@ -9,19 +9,19 @@ export function cn(...inputs: ClassValue[]) {
  * A simple debounce function that takes a function and a delay,
  * and returns a new debounced function.
  */
-export const debounce = <F extends (...args: any[]) => any>(
-  func: F,
-  waitFor: number
-) => {
-  let timeout: NodeJS.Timeout | null = null;
+// export const debounce = <F extends (...args: any[]) => any>(
+//   func: F,
+//   waitFor: number
+// ) => {
+//   let timeout: NodeJS.Timeout | null = null;
 
-  const debounced = (...args: Parameters<F>) => {
-    if (timeout !== null) {
-      clearTimeout(timeout);
-      timeout = null;
-    }
-    timeout = setTimeout(() => func(...args), waitFor);
-  };
+//   const debounced = (...args: Parameters<F>) => {
+//     if (timeout !== null) {
+//       clearTimeout(timeout);
+//       timeout = null;
+//     }
+//     timeout = setTimeout(() => func(...args), waitFor);
+//   };
 
-  return debounced as (...args: Parameters<F>) => void;
-};
+//   return debounced as (...args: Parameters<F>) => void;
+// };
