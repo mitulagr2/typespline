@@ -9,16 +9,17 @@ import Slider from '../ui/Slider';
 interface RightSidebarProps {
   activeObject: fabric.Object | null;
   onUpdate: (props: Partial<fabric.ITextOptions | { shadow: fabric.Shadow | undefined }>) => void;
+  onSaveHistory: (action: string) => void;
 }
 
-const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
+const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarProps) => {
   const [fontList, setFontList] = useState<string[]>([]);
   const isTextbox = activeObject?.type === 'textbox';
 
   useEffect(() => {
     const fetchFonts = async () => {
       try {
-        const response = await fetch('/api/fonts');
+        const response = await fetch('/google-fonts.json');
         if (!response.ok) throw new Error('Failed to fetch fonts');
         const fonts = await response.json();
         setFontList(fonts);
@@ -36,6 +37,7 @@ const RightSidebar = ({ activeObject, onUpdate }: RightSidebarProps) => {
     try {
       await loadGoogleFont(fontFamily);
       onUpdate({ fontFamily });
+      onSaveHistory('Change Font');
     } catch (error) {
       console.error("Failed to load font:", error);
       // Optionally handle the error in the UI

@@ -148,29 +148,39 @@ export default function Editor() {
       const savedState = localStorage.getItem('canvasState');
 
       if (savedState) {
-        // STEP 1: PRE-PROCESS THE JSON TO FIND ALL FONTS
-        const data = JSON.parse(savedState);
-        if (data.objects && Array.isArray(data.objects)) {
+        // STEP 1: Fetch your local list of all VALID Google Fonts first.
+        let validGoogleFonts: string[] = [];
+        try {
+          const response = await fetch('/google-fonts.json');
+          if (response.ok) {
+            validGoogleFonts = await response.json();
+          }
+        } catch (e) {
+          console.error("Could not load local font list for validation.", e);
+        }
 
-          // Use a Set to get a unique list of font families
-          const fontFamilies = new Set<string>();
+        // STEP 2: Extract all unique font families from the saved state.
+        const data = JSON.parse(savedState);
+        const fontFamiliesInSave = new Set<string>();
+        if (data.objects && Array.isArray(data.objects)) {
           data.objects.forEach((obj: any) => {
             if (obj.fontFamily) {
-              fontFamilies.add(obj.fontFamily);
+              fontFamiliesInSave.add(obj.fontFamily);
             }
           });
+        }
 
-          // STEP 2: LOAD ALL UNIQUE FONTS ASYNCHRONOUSLY
-          if (fontFamilies.size > 0) {
-            // Create an array of promises, one for each font to load
-            const fontLoadPromises = Array.from(fontFamilies).map(font =>
-              loadGoogleFont(font) // Using our existing utility
-            );
+        // STEP 3: FILTER the list to get only the fonts that are actual Google Fonts.
+        const googleFontsToLoad = Array.from(fontFamiliesInSave).filter(font =>
+          validGoogleFonts.includes(font)
+        );
 
-            // Wait for all font loading promises to complete.
-            // Promise.allSettled is robust; it won't fail if one font is invalid.
-            await Promise.allSettled(fontLoadPromises);
-          }
+        // STEP 4: Load ONLY the valid Google Fonts.
+        if (googleFontsToLoad.length > 0) {
+          const fontLoadPromises = googleFontsToLoad.map(font =>
+            loadGoogleFont(font) // This will no longer be called with "Arial"
+          );
+          await Promise.allSettled(fontLoadPromises);
         }
 
         // STEP 3: NOW LOAD THE DATA INTO THE CANVAS
@@ -487,6 +497,7 @@ export default function Editor() {
         <RightSidebar
           activeObject={activeObject}
           onUpdate={updateActiveObject}
+          onSaveHistory={saveState}
         />
       </div>
     </main>
