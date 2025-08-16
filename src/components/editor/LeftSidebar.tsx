@@ -3,6 +3,8 @@
 import React from 'react';
 import { fabric } from 'fabric';
 import Button from '../ui/Button';
+import { HistoryItem } from '@/hooks/useHistory';
+import HistoryPanel from './HistoryPanel';
 
 // A simple lock icon component
 const LockIcon = ({ locked }: { locked: boolean }) => (
@@ -16,6 +18,9 @@ const LockIcon = ({ locked }: { locked: boolean }) => (
 );
 
 interface LeftSidebarProps {
+  history: HistoryItem[];
+  currentIndex: number;
+  onJumpToState: (index: number) => void;
   layers: fabric.Object[];
   activeObject: fabric.Object | null;
   onLayerSelect: (obj: fabric.Object) => void;
@@ -24,11 +29,17 @@ interface LeftSidebarProps {
   onLayerDuplicate: (obj: fabric.Object) => void;
 }
 
-const LeftSidebar = ({ layers, activeObject, onLayerSelect, onLayerMove, onLayerLock, onLayerDuplicate }: LeftSidebarProps) => {
+const LeftSidebar = ({ history, currentIndex, onJumpToState, layers, activeObject, onLayerSelect, onLayerMove, onLayerLock, onLayerDuplicate }: LeftSidebarProps) => {
   return (
     <aside className="w-72 bg-gray-800 text-white p-4 flex flex-col">
-      <h2 className="text-lg font-semibold mb-4">Layers</h2>
+      <HistoryPanel
+        history={history}
+        currentIndex={currentIndex}
+        onJump={onJumpToState}
+      />
       
+      <h2 className="text-lg font-semibold mb-4">Layers</h2>
+
       <div className="flex-grow space-y-2 overflow-y-auto">
         {[...layers].reverse().map((layer, index) => { // Reverse to show top layer first
           const isActive = layer === activeObject;
@@ -43,9 +54,9 @@ const LeftSidebar = ({ layers, activeObject, onLayerSelect, onLayerMove, onLayer
             const group = layer as fabric.Group;
             layerName = `Group (${group.size()})`;
           }
-          
+
           return (
-            <div key={`${layer.type}-${index}`} className={`p-2 rounded-md flex items-center justify-between transition-colors ${ isActive ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600' }`} >
+            <div key={`${layer.type}-${index}`} className={`p-2 rounded-md flex items-center justify-between transition-colors ${isActive ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`} >
               <div onClick={() => onLayerSelect(layer)} className="flex-grow cursor-pointer truncate pr-2">
                 {layerName || `[Empty Text]`}
               </div>
@@ -57,7 +68,7 @@ const LeftSidebar = ({ layers, activeObject, onLayerSelect, onLayerMove, onLayer
           );
         })}
       </div>
-      
+
       <div className="mt-4 pt-4 border-t border-gray-600 grid grid-cols-2 gap-2">
         <Button onClick={() => onLayerMove('forward')} disabled={!activeObject}>Bring Forward</Button>
         <Button onClick={() => onLayerMove('backward')} disabled={!activeObject}>Send Backward</Button>

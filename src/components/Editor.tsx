@@ -7,7 +7,7 @@ import Header from "@/components/editor/Header";
 import LeftSidebar from "@/components/editor/LeftSidebar";
 import RightSidebar from "@/components/editor/RightSidebar";
 import { useFabric } from '@/hooks/useFabric';
-import { useHistory } from '@/hooks/useHistory';
+import { HistoryItem, useHistory } from '@/hooks/useHistory';
 import { loadGoogleFont } from '@/lib/font-loader';
 
 export default function Editor() {
@@ -21,13 +21,24 @@ export default function Editor() {
   const verticalLine = useRef<fabric.Line | null>(null);
   const horizontalLine = useRef<fabric.Line | null>(null);
 
-  const { undo, redo, saveState, canUndo, canRedo, setHistory } = useHistory(canvas);
-
   const updateLayers = useCallback(() => {
     if (canvas) {
       setLayers(canvas.getObjects());
     }
   }, [canvas]);
+
+  const {
+    history,
+    currentIndex,
+    jumpToState,
+    saveState,
+    debouncedSaveModification,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    setHistory
+  } = useHistory(canvas, setLayers);
 
   // TODO font load
   const initCanvasCallback = useCallback((fabricCanvas: fabric.Canvas) => {
@@ -130,52 +141,61 @@ export default function Editor() {
 
   useEffect(() => {
     if (!canvas) {
-        return;
+      return;
     }
 
     const loadCanvasState = async () => {
-        const savedState = localStorage.getItem('canvasState');
+      const savedState = localStorage.getItem('canvasState');
 
-        if (savedState) {
-            // STEP 1: PRE-PROCESS THE JSON TO FIND ALL FONTS
-            const data = JSON.parse(savedState);
-            if (data.objects && Array.isArray(data.objects)) {
-                
-                // Use a Set to get a unique list of font families
-                const fontFamilies = new Set<string>();
-                data.objects.forEach((obj: any) => {
-                    if (obj.fontFamily) {
-                        fontFamilies.add(obj.fontFamily);
-                    }
-                });
+      if (savedState) {
+        // STEP 1: PRE-PROCESS THE JSON TO FIND ALL FONTS
+        const data = JSON.parse(savedState);
+        if (data.objects && Array.isArray(data.objects)) {
 
-                // STEP 2: LOAD ALL UNIQUE FONTS ASYNCHRONOUSLY
-                if (fontFamilies.size > 0) {
-                    // Create an array of promises, one for each font to load
-                    const fontLoadPromises = Array.from(fontFamilies).map(font => 
-                        loadGoogleFont(font) // Using our existing utility
-                    );
-                    
-                    // Wait for all font loading promises to complete.
-                    // Promise.allSettled is robust; it won't fail if one font is invalid.
-                    await Promise.allSettled(fontLoadPromises);
-                }
+          // Use a Set to get a unique list of font families
+          const fontFamilies = new Set<string>();
+          data.objects.forEach((obj: any) => {
+            if (obj.fontFamily) {
+              fontFamilies.add(obj.fontFamily);
             }
+          });
 
-            // STEP 3: NOW LOAD THE DATA INTO THE CANVAS
-            // By this point, all fonts are loaded and ready in the browser.
-            canvas.loadFromJSON(savedState, () => {
-                canvas.renderAll();
-                
-                // Sync the React state after the canvas is fully loaded and rendered
-                setHistory([savedState]);
-                updateLayers(); // Assuming updateLayers is wrapped in useCallback
-            });
+          // STEP 2: LOAD ALL UNIQUE FONTS ASYNCHRONOUSLY
+          if (fontFamilies.size > 0) {
+            // Create an array of promises, one for each font to load
+            const fontLoadPromises = Array.from(fontFamilies).map(font =>
+              loadGoogleFont(font) // Using our existing utility
+            );
 
-        } else {
-            // If there's no saved state, initialize the history with the empty canvas.
-            setHistory([JSON.stringify(canvas.toJSON())]);
+            // Wait for all font loading promises to complete.
+            // Promise.allSettled is robust; it won't fail if one font is invalid.
+            await Promise.allSettled(fontLoadPromises);
+          }
         }
+
+        // STEP 3: NOW LOAD THE DATA INTO THE CANVAS
+        // By this point, all fonts are loaded and ready in the browser.
+        canvas.loadFromJSON(savedState, () => {
+          canvas.renderAll();
+
+          const initialHistoryItem: HistoryItem = {
+            state: savedState,
+            action: 'Load from Save' // A descriptive action name
+          };
+
+          // Sync the React state after the canvas is fully loaded and rendered
+          setHistory([initialHistoryItem]);
+          updateLayers(); // Assuming updateLayers is wrapped in useCallback
+        });
+
+      } else {
+        const initialHistoryItem: HistoryItem = {
+          state: JSON.stringify(canvas.toJSON()),
+          action: 'Initial State'
+        };
+        // If there's no saved state, initialize the history with the empty canvas.
+        setHistory([initialHistoryItem]);
+      }
     };
 
     loadCanvasState();
@@ -205,7 +225,7 @@ export default function Editor() {
         canvas.setDimensions({ width: imgObj.width * scale, height: imgObj.height * scale });
         const image = new fabric.Image(imgObj, { selectable: false, evented: false });
         canvas.setBackgroundImage(image, canvas.renderAll.bind(canvas), { scaleX: scale, scaleY: scale });
-        saveState();
+        saveState('Upload Image');
         updateLayers();
       };
     };
@@ -226,6 +246,7 @@ export default function Editor() {
       padding: 7,
     });
     canvas.add(text);
+    saveState('Add Text');
     canvas.setActiveObject(text);
     updateLayers();
   };
@@ -238,7 +259,6 @@ export default function Editor() {
         activeObject.set(props);
       }
       canvas.renderAll();
-      saveState();
     }
   };
 
@@ -260,6 +280,7 @@ export default function Editor() {
         top: (obj.top ?? 0) + 10,
       });
       canvas.add(cloned);
+      saveState('Duplicate Layer');
       canvas.setActiveObject(cloned);
       updateLayers();
     });
@@ -274,7 +295,7 @@ export default function Editor() {
       case 'backward': activeObject.sendBackwards(); break;
     }
     canvas.renderAll();
-    saveState();
+    saveState('Move Layer');
     updateLayers();
   };
 
@@ -336,7 +357,11 @@ export default function Editor() {
         canvas.renderAll();
         canvas.setDimensions({ width: 500, height: 500 });
         localStorage.removeItem('canvasState');
-        setHistory([JSON.stringify(canvas.toJSON())]);
+        const initialHistoryItem: HistoryItem = {
+          state: JSON.stringify(canvas.toJSON()),
+          action: 'Initial State'
+        };
+        setHistory([initialHistoryItem]);
         updateLayers();
       }
     }
@@ -349,7 +374,7 @@ export default function Editor() {
     const sel = activeObject as fabric.ActiveSelection;
     const group = sel.toGroup();
     canvas.requestRenderAll();
-    saveState();
+    saveState('Group');
     updateLayers();
   };
 
@@ -360,18 +385,20 @@ export default function Editor() {
     const group = activeObject as fabric.Group;
     group.toActiveSelection();
     canvas.requestRenderAll();
-    saveState();
+    saveState('Ungroup');
     updateLayers();
   };
 
+  const handleJumpToState = async (index: number) => {
+    jumpToState(index);
+  };
+
   const handleUndo = async () => {
-    await undo();     // 1. Wait for the canvas to finish undoing
-    updateLayers();   // 2. Then, sync the React layer list
+    undo();
   };
 
   const handleRedo = async () => {
-    await redo();     // 1. Wait for the canvas to finish redoing
-    updateLayers();   // 2. Then, sync the React layer list
+    redo();
   };
 
   useEffect(() => {
@@ -413,7 +440,7 @@ export default function Editor() {
     // We also need to save state after nudging is finished
     const handleKeyUp = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        saveState();
+        saveState('Nudge' + e.key.substring(5));
       }
     }
 
@@ -444,6 +471,9 @@ export default function Editor() {
       <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/png" />
       <div className="flex flex-1 overflow-hidden">
         <LeftSidebar
+          history={history}
+          currentIndex={currentIndex}
+          onJumpToState={handleJumpToState}
           layers={layers}
           activeObject={activeObject}
           onLayerSelect={(obj) => canvas?.setActiveObject(obj).renderAll()}
