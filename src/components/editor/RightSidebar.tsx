@@ -37,7 +37,7 @@ const RightSidebar = ({ activeObject, onUpdate, onSaveHistory }: RightSidebarPro
     try {
       await loadGoogleFont(fontFamily);
       onUpdate({ fontFamily });
-      onSaveHistory('Change Font');
+      onSaveHistory('Modify Properties');
     } catch (error) {
       console.error("Failed to load font:", error);
       // Optionally handle the error in the UI

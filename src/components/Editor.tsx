@@ -450,7 +450,7 @@ export default function Editor() {
     // We also need to save state after nudging is finished
     const handleKeyUp = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        saveState('Nudge' + e.key.substring(5));
+        saveState('Nudge ' + e.key.substring(5));
       }
     }
 
